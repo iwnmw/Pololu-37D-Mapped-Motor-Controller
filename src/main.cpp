@@ -11,7 +11,7 @@ const int minSpeed = 65; // Minimum speed in RPM. Manually figured out via testi
 const int maxSpeed = 530; // Maximum speed in RPM
 const int minPWM = 20; // Adjust this to the smallest PWM value that will still move the motor
 const int maxPWM = 255;
-float RPMTarget = 530; // Commanded speed in RPM
+float RPMTarget = 300; // Commanded speed in RPM
 
 // Define variables for encoder reading and intialize the encoder object
 const int encoderPinA = 5; // Must be interrupt capable; keep in mind if you change to another board
@@ -23,7 +23,7 @@ const int encoderCPR = 1200; // Counts per revolution of the encoder (output sha
 unsigned long lastTime = 0;
 
 int speedToPWM(float commandedSpeed) {
-  // Generated a 3rd order polynomial to map RPM to PWM using experimental data
+  // Generated a 6th order polynomial to map RPM to PWM using experimental data bc 3rd order was crap and 6th isn't much more computationally expensive
   // May need to be adjusted under load (was done unloaded) or for different motors
   float rpmMath = abs(commandedSpeed);
   if (rpmMath < minSpeed) {
@@ -32,7 +32,7 @@ int speedToPWM(float commandedSpeed) {
     return maxPWM; // Return maximum PWM if speed is above maximum
   } else {
     
-    float pwm = 0.000004 * pow(rpmMath, 3) - 0.003 * pow(rpmMath, 2) + 0.7822 * rpmMath - 22.524;
+    float pwm = 2e-13*pow(rpmMath, 6) - 4e-10*pow(rpmMath, 5) + 2e-07*pow(rpmMath, 4) - 7e-05*pow(rpmMath, 3) + 0.0114*pow(rpmMath, 2) - 0.7116*rpmMath + 34.326; // Polynomial fit to RPM vs PWM data
     return constrain((int)pwm, minPWM, maxPWM); // Ensure PWM is within bounds (again) just to be safe
 }
 }
