@@ -23,9 +23,19 @@ const int encoderCPR = 1200; // Counts per revolution of the encoder (output sha
 unsigned long lastTime = 0;
 
 int speedToPWM(float commandedSpeed) {
-  // First, just attempt to linearly map the speed to a PWM value with customized min and max speed
-  return map(abs(commandedSpeed), minSpeed, maxSpeed, minPWM, maxPWM);
-} 
+  // Generated a 3rd order polynomial to map RPM to PWM using experimental data
+  // May need to be adjusted under load (was done unloaded) or for different motors
+  float rpmMath = abs(commandedSpeed);
+  if (rpmMath < minSpeed) {
+    return minPWM; // Return minimum PWM if speed is below minimum
+  } else if (rpmMath > maxSpeed) {
+    return maxPWM; // Return maximum PWM if speed is above maximum
+  } else {
+    
+    float pwm = 0.000004 * pow(rpmMath, 3) - 0.003 * pow(rpmMath, 2) + 0.7822 * rpmMath - 22.524;
+    return constrain((int)pwm, minPWM, maxPWM); // Ensure PWM is within bounds (again) just to be safe
+}
+}
 
 void sendMotorOutput(int pwmValue) {
 
@@ -34,7 +44,7 @@ void sendMotorOutput(int pwmValue) {
     Serial.println("Speed out of bounds, setting to 0");
     RPMTarget = 0; // Set to zero if out of bounds
   }
-  
+
   // Determine direction first
   if (RPMTarget > 0) {
     digitalWrite(INA, HIGH);
