@@ -7,9 +7,9 @@ const int INB = 4;
 const int PWM_PIN = 3;
 
 // Define minimum, maximum speed and targeted speed (manually update speed while testing)
-const int minSpeed = 0; // Minimum speed in RPM (for this method, have the direction and speed magnitude be handled separately)
+const int minSpeed = 65; // Minimum speed in RPM. Manually figured out via testing; motor cannot be driven below this speed
 const int maxSpeed = 530; // Maximum speed in RPM
-const int minPWM = 0; // Adjust this to the smallest PWM value that will still move the motor
+const int minPWM = 20; // Adjust this to the smallest PWM value that will still move the motor
 const int maxPWM = 255;
 float RPMTarget = 530; // Commanded speed in RPM
 
@@ -29,6 +29,12 @@ int speedToPWM(float commandedSpeed) {
 
 void sendMotorOutput(int pwmValue) {
 
+  // Ensure speed command is within bounds
+  if (abs(RPMTarget) > maxSpeed or abs(RPMTarget) < minSpeed) {
+    Serial.println("Speed out of bounds, setting to 0");
+    RPMTarget = 0; // Set to zero if out of bounds
+  }
+  
   // Determine direction first
   if (RPMTarget > 0) {
     digitalWrite(INA, HIGH);
