@@ -1,0 +1,83 @@
+#include <Arduino.h>
+#include <Encoder.h>
+
+// Define pin variables
+const int INA = 2;
+const int INB = 4;
+const int PWM_PIN = 3;
+
+// Define minimum, maximum speed and targeted speed (manually update speed while testing)
+const int minSpeed = 0; // Minimum speed in RPM (for this method, have the direction and speed magnitude be handled separately)
+const int maxSpeed = 530; // Maximum speed in RPM
+const int minPWM = 0; // Adjust this to the smallest PWM value that will still move the motor
+const int maxPWM = 255;
+float RPMTarget = 530; // Commanded speed in RPM
+
+// Define variables for encoder reading and intialize the encoder object
+const int encoderPinA = 5; // Must be interrupt capable; keep in mind if you change to another board
+const int encoderPinB = 6;
+Encoder myEnc(encoderPinA, encoderPinB);
+
+// Definie values for converting the encoder reading to RPM
+const int encoderCPR = 1200; // Counts per revolution of the encoder (output shaft)
+unsigned long lastTime = 0;
+
+int speedToPWM(float commandedSpeed) {
+  // First, just attempt to linearly map the speed to a PWM value with customized min and max speed
+  return map(abs(commandedSpeed), minSpeed, maxSpeed, minPWM, maxPWM);
+} 
+
+void sendMotorOutput(int pwmValue) {
+
+  // Determine direction first
+  if (RPMTarget > 0) {
+    digitalWrite(INA, HIGH);
+    digitalWrite(INB, LOW);
+  } else if (RPMTarget < 0) {
+    digitalWrite(INA, LOW);
+    digitalWrite(INB, HIGH);
+  } else {
+    // If RPMTarget is zero, stop the motor
+    digitalWrite(INA, LOW);
+    digitalWrite(INB, LOW);
+  }
+  analogWrite(PWM_PIN, pwmValue);
+}
+
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize pins
+  pinMode(INA, OUTPUT);
+  pinMode(INB, OUTPUT);
+  pinMode(PWM_PIN, OUTPUT);
+  Serial.println("Motor Control Initialized");
+}
+
+long oldPosition = 0;
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  long newPosition = myEnc.read();
+  unsigned long currentTime = millis();
+  float dt = currentTime - lastTime; // Time difference in millisecond
+  long deltaPosition = newPosition - oldPosition;
+  float RPMActual = -(deltaPosition / (float)encoderCPR) * (60000.0 / dt); // Convert encoder counts to RPM
+  lastTime = currentTime;
+  oldPosition = newPosition;
+
+  // Compute the PWM value based on the target speed and send it to the motor
+  sendMotorOutput(speedToPWM(RPMTarget));
+
+  // Print the encoder position and the target speed
+  Serial.print("Actual RPM: ");
+  Serial.print(RPMActual);
+  Serial.print(" Target RPM: ");  Serial.print(RPMTarget);
+  Serial.print(" PWM Value: ");
+  Serial.print(speedToPWM(RPMTarget));
+  Serial.print(" Time: "); Serial.println(currentTime);
+
+  // Small delay to reduce noise in encoder reading
+  delay(100); // Adjust as necessary for your application
+}
