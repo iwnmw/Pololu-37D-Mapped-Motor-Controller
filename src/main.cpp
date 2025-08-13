@@ -7,19 +7,19 @@ const int INB = 4;
 const int PWM_PIN = 3;
 
 // Define minimum, maximum speed and targeted speed (manually update speed while testing)
-const int minSpeed = 65; // Minimum speed in RPM. Manually figured out via testing; motor cannot be driven below this speed
-const int maxSpeed = 530; // Maximum speed in RPM
-const int minPWM = 20; // Adjust this to the smallest PWM value that will still move the motor
+const int minSpeed = 9.5; // Minimum speed in RPM. Manually figured out via testing; motor cannot be driven below this speed
+const int maxSpeed = 150; // Maximum speed in RPM
+const int minPWM = 22; // Adjust this to the smallest PWM value that will still move the motor
 const int maxPWM = 255;
-float RPMTarget = 530; // Commanded speed in RPM
+float RPMTarget = 30; // Commanded speed in RPM
 
 // Define variables for encoder reading and intialize the encoder object
-const int encoderPinA = 5; // Must be interrupt capable; keep in mind if you change to another board
-const int encoderPinB = 6;
+const int encoderPinA = 48; // Must be interrupt capable; keep in mind if you change to another board
+const int encoderPinB = 49;
 Encoder myEnc(encoderPinA, encoderPinB);
 
 // Definie values for converting the encoder reading to RPM
-const int encoderCPR = 1200; // Counts per revolution of the encoder (output shaft)
+const int encoderCPR = 4480; // Counts per revolution of the encoder (output shaft)
 unsigned long lastTime = 0;
 
 int speedToPWM(float commandedSpeed) {
@@ -37,7 +37,7 @@ int speedToPWM(float commandedSpeed) {
     return maxPWM; // Return maximum PWM if speed is above maximum
   } else {
     
-    float pwm = 2.31053e-13*rpm6 - 3.680998e-10*rpm5 + 2.320795e-07*rpm4 - 7.19185e-05*rpm3 + 0.01144177*rpm2 - 0.7116177*rpmMath + 34.32612; // Polynomial fit to RPM vs PWM data
+    float pwm = -6.665e-10*rpm6 + 3.163411e-07*rpm5 - 5.744087e-05*rpm4 + 5.096598e-03*rpm3 - 0.226899*rpm2 + 5.439907*rpmMath - 17.815152; // Polynomial fit to RPM vs PWM data
     return constrain((int)pwm, minPWM, maxPWM); // Ensure PWM is within bounds (again) just to be safe
 }
 }
